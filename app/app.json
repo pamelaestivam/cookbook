@@ -1,0 +1,48 @@
+{
+  "expo": {
+    "name": "Cookbook",
+    "slug": "cookbook",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.cookbook.app",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Pick screenshots of recipes to add them to your cookbook."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#FBF7EF",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.cookbook.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-image",
+      "expo-font",
+      "expo-splash-screen",
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Pick screenshots of recipes to add them to your cookbook.",
+          "cameraPermission": false
+        }
+      ]
+    ],
+    "scheme": "cookbook",
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
