@@ -1,7 +1,8 @@
 import { Image } from "expo-image";
 import { Link, router } from "expo-router";
-import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { confirm, notify } from "@/components/dialog";
 import { Body, Button, chapterNumber, Heading, Kicker } from "@/components/ui";
 import { signOut } from "@/lib/auth";
 import { dismissImport, retryImport, useCookbook } from "@/lib/cookbook";
@@ -22,7 +23,11 @@ function importLabel(item: Import) {
 
 function InTheKitchen({ items, cookbookId }: { items: Import[]; cookbookId: string }) {
   const colors = useColors();
-  const act = (fn: () => Promise<void>) => fn().catch((e: Error) => Alert.alert("Something went wrong", e.message));
+  const { reload } = useCookbook();
+  const act = (fn: () => Promise<void>) =>
+    fn()
+      .then(reload)
+      .catch((e: Error) => notify("Something went wrong", e.message));
 
   return (
     <View style={styles.section}>
@@ -148,10 +153,9 @@ export default function Contents() {
             label="Sign out"
             variant="quiet"
             onPress={() =>
-              Alert.alert("Sign out?", undefined, [
-                { text: "Cancel", style: "cancel" },
-                { text: "Sign out", style: "destructive", onPress: signOut },
-              ])
+              confirm("Sign out?", undefined, "Sign out").then((yes) => {
+                if (yes) signOut();
+              })
             }
           />
         </View>

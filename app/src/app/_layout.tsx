@@ -9,6 +9,7 @@ import { SplashScreen, Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { useColorScheme } from "react-native";
+import { DialogHost } from "@/components/dialog";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { CookbookProvider } from "@/lib/cookbook";
 import { fonts, useColors } from "@/lib/theme";
@@ -57,6 +58,7 @@ function RootStack() {
           <Stack.Screen name="sign-in" options={{ headerShown: false }} />
         </Stack.Protected>
       </Stack>
+      <DialogHost />
     </CookbookProvider>
   );
 }

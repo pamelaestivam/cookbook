@@ -3,7 +3,7 @@ import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import { useState } from "react";
-import { ScrollView, StyleSheet, TextInput, View } from "react-native";
+import { Platform, ScrollView, StyleSheet, TextInput, View } from "react-native";
 import { Body, Button, Heading, Kicker, Rule } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
 import { addScreenshots, addVideo, isVideoLink, useCookbook } from "@/lib/cookbook";
@@ -14,15 +14,19 @@ const MAX_SCREENSHOTS = 20;
 export default function AddRecipe() {
   const colors = useColors();
   const { session } = useAuth();
-  const { cookbook } = useCookbook();
+  const { cookbook, reload } = useCookbook();
   const [link, setLink] = useState("");
   const [screenshots, setScreenshots] = useState<ImagePicker.ImagePickerAsset[]>([]);
   const [busy, setBusy] = useState<"video" | "images" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function paste() {
-    const text = await Clipboard.getStringAsync();
-    if (text) setLink(text.trim());
+    try {
+      const text = await Clipboard.getStringAsync();
+      if (text) setLink(text.trim());
+    } catch {
+      setError("Couldn't read the clipboard. Paste the link into the box instead.");
+    }
   }
 
   async function pickScreenshots() {
@@ -43,6 +47,7 @@ export default function AddRecipe() {
     try {
       if (kind === "video") await addVideo(cookbook.id, link);
       else await addScreenshots(cookbook.id, session.user.id, screenshots);
+      await reload();
       router.back();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
@@ -77,7 +82,7 @@ export default function AddRecipe() {
             accessibilityLabel="Video link"
             style={[styles.input, { borderColor: colors.rule, backgroundColor: colors.surface, color: colors.ink }]}
           />
-          <Button label="Paste" variant="secondary" onPress={paste} />
+          {Platform.OS !== "web" && <Button label="Paste" variant="secondary" onPress={paste} />}
         </View>
         <Button
           label="Add from video"

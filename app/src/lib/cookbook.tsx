@@ -83,6 +83,15 @@ export function CookbookProvider({ children }: { children: ReactNode }) {
     };
   }, [userId, reload]);
 
+  // Realtime can drop events (for example while the app is in the background),
+  // so also check every few seconds while something is in the kitchen.
+  const cooking = state.imports.some((item) => item.status === "queued" || item.status === "processing");
+  useEffect(() => {
+    if (!cooking) return;
+    const timer = setInterval(reload, 4000);
+    return () => clearInterval(timer);
+  }, [cooking, reload]);
+
   const value = useMemo(() => ({ ...state, reload }), [state, reload]);
   return <CookbookContext.Provider value={value}>{children}</CookbookContext.Provider>;
 }

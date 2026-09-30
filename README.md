@@ -86,6 +86,12 @@ cd worker && npm run typecheck && npm test   # transcript parsing, frame extract
 cd app && npm run typecheck
 ```
 
+## Preview
+
+`cd app && npm run preview -- preview.html` builds a single-file, clickable web preview. It runs with the sample
+recipes from `docs/inspiration/` and a stand-in backend (`app/preview/demo-backend.js`) that simulates imports, so
+it needs no Supabase project, API key or worker.
+
 ## Next steps
 
 - **Share to the app**: accept links shared from Instagram or TikTok through the share sheet (for example with

@@ -1,0 +1,100 @@
+<title>Cookbook Preview</title>
+<style>
+  /* Layout: a thin notice bar over the app, which sits in a phone-width column on wide screens. */
+  :root {
+    --paper: #fbf7ef;
+    --paper-deep: #f0e5d6;
+    --ink: #2d201b;
+    --ink-soft: #69534a;
+    --berry: #9a3145;
+    --rule: #d9c8b8;
+    --font-ui: "DMSans_400Regular", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #201815;
+      --paper-deep: #17110f;
+      --ink: #f4eadf;
+      --ink-soft: #cbb8aa;
+      --berry: #e18192;
+      --rule: #59453c;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #201815;
+    --paper-deep: #17110f;
+    --ink: #f4eadf;
+    --ink-soft: #cbb8aa;
+    --berry: #e18192;
+    --rule: #59453c;
+    color-scheme: dark;
+  }
+  html,
+  body {
+    height: 100%;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--paper-deep);
+    color: var(--ink);
+    font-family: var(--font-ui);
+  }
+  .notice {
+    flex: none;
+    padding: 8px 16px;
+    text-align: center;
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--ink-soft);
+    border-bottom: 1px solid var(--rule);
+    background: var(--paper);
+    text-wrap: balance;
+  }
+  .notice strong {
+    color: var(--berry);
+    font-family: "DMSans_700Bold", var(--font-ui);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 11px;
+    margin-right: 6px;
+  }
+  .stage {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    justify-content: center;
+  }
+  #root {
+    display: flex;
+    flex: 1;
+    width: 100%;
+    max-width: 440px;
+    min-height: 0;
+    background: var(--paper);
+  }
+  @media (min-width: 520px) {
+    #root {
+      border-inline: 1px solid var(--rule);
+      box-shadow: 0 0 60px rgba(61, 37, 26, 0.12);
+    }
+  }
+</style>
+
+<div class="notice">
+  <strong>Preview</strong>Sample recipes. Add a video link or screenshots to watch a recipe get added. Nothing leaves
+  this page, and any email and code sign you back in.
+</div>
+<div class="stage"><div id="root"></div></div>
+
+<script>
+  /*DEMO_DATA*/
+</script>
+<script>
+  /*DEMO_BACKEND*/
+</script>
+<script>
+  /*APP_BUNDLE*/
+</script>

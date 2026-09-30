@@ -1,0 +1,99 @@
+[
+  {
+    "title": "Pão de Queijo",
+    "original_title": null,
+    "category": "Breads & snacks",
+    "tagline": "Tapioca starch · cheese · naturally gluten-free",
+    "summary": "Crisp outside, chewy and cheesy inside: Brazilian cheese bread made with a scalded tapioca-starch dough. The dough freezes well, so you can bake a handful at a time.",
+    "highlights": ["Makes about 24", "200°C / 390°F", "25 min bake"],
+    "yield": "Makes about 24",
+    "ingredient_groups": [
+      {
+        "name": "Dough",
+        "items": [
+          "250 ml whole milk",
+          "120 ml vegetable oil",
+          "1 tsp salt",
+          "500 g sour tapioca starch (polvilho azedo)",
+          "2 eggs",
+          "200 g grated Parmesan or Minas cheese"
+        ]
+      }
+    ],
+    "method_sections": [
+      {
+        "name": "Make the dough",
+        "steps": [
+          "Bring the milk, oil and salt to a boil.",
+          "Pour it over the tapioca starch and mix with a spoon until it forms a lumpy, scalded dough. Let it cool for 10 minutes.",
+          "Add the eggs one at a time, kneading until smooth, then knead in the cheese."
+        ]
+      },
+      {
+        "name": "Shape & bake",
+        "steps": [
+          "With oiled hands, roll the dough into balls about 3 cm across and set them on a lined tray.",
+          "Bake at 200°C (390°F) for about 25 minutes, until puffed and golden.",
+          "Serve warm."
+        ]
+      }
+    ],
+    "notes": [
+      {
+        "title": "About this preview",
+        "body": "This sample recipe stands in for the one the app writes from your video. The real app watches the video, reads its caption and transcript, and writes the recipe it teaches."
+      }
+    ],
+    "nutrition": null
+  },
+  {
+    "title": "Lemon Olive Oil Cake",
+    "original_title": null,
+    "category": "Cakes & celebration",
+    "tagline": "Lemon zest · olive oil · one bowl",
+    "summary": "A tender, fragrant loaf that keeps for days. Everything is whisked in one bowl, and a quick lemon syrup soaks in while it is still warm.",
+    "highlights": ["23 × 13 cm loaf pan", "175°C / 350°F", "50 min bake"],
+    "yield": "Serves 8",
+    "ingredient_groups": [
+      {
+        "name": "Cake",
+        "items": [
+          "200 g sugar",
+          "Zest of 2 lemons",
+          "3 eggs",
+          "160 ml extra-virgin olive oil",
+          "180 ml plain yogurt",
+          "200 g all-purpose flour",
+          "2 tsp baking powder",
+          "½ tsp salt"
+        ]
+      },
+      { "name": "Syrup", "items": ["60 ml lemon juice", "50 g sugar"] }
+    ],
+    "method_sections": [
+      {
+        "name": "Cake",
+        "steps": [
+          "Rub the lemon zest into the sugar with your fingers until fragrant.",
+          "Whisk in the eggs, then the olive oil and yogurt.",
+          "Fold in the flour, baking powder and salt until just combined.",
+          "Pour into a lined loaf pan and bake at 175°C (350°F) for about 50 minutes, until a skewer comes out clean."
+        ]
+      },
+      {
+        "name": "Syrup",
+        "steps": [
+          "Warm the lemon juice and sugar until the sugar dissolves.",
+          "Poke holes in the warm cake and spoon the syrup over it. Cool in the pan."
+        ]
+      }
+    ],
+    "notes": [
+      {
+        "title": "About this preview",
+        "body": "This sample recipe stands in for the one the app writes from your link or screenshots."
+      }
+    ],
+    "nutrition": null
+  }
+]

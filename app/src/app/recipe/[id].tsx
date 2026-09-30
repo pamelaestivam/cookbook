@@ -1,8 +1,9 @@
 import { Image } from "expo-image";
 import { Link, router, useLocalSearchParams } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { confirm, notify } from "@/components/dialog";
 import { Body, Button, chapterNumber, Chip, Heading, Kicker, Rule } from "@/components/ui";
 import { deleteRecipe, useCookbook } from "@/lib/cookbook";
 import { fonts, useColors, type Colors } from "@/lib/theme";
@@ -39,7 +40,7 @@ export default function RecipePage() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { recipes, coverUrls } = useCookbook();
+  const { recipes, coverUrls, reload } = useCookbook();
   const index = recipes.findIndex((r) => r.id === id);
   const recipe = recipes[index];
 
@@ -60,18 +61,15 @@ export default function RecipePage() {
     ...(content.yield && !content.highlights.includes(content.yield) ? [content.yield] : []),
   ];
 
-  function confirmDelete() {
-    Alert.alert(`Remove “${recipe.title}”?`, "It will be removed from your cookbook.", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Remove",
-        style: "destructive",
-        onPress: () =>
-          deleteRecipe(recipe.id)
-            .then(() => router.back())
-            .catch((e: Error) => Alert.alert("Couldn't remove the recipe", e.message)),
-      },
-    ]);
+  async function confirmDelete() {
+    if (!(await confirm(`Remove “${recipe.title}”?`, "It will be removed from your cookbook.", "Remove"))) return;
+    try {
+      await deleteRecipe(recipe.id);
+      router.back();
+      await reload();
+    } catch (e) {
+      notify("Couldn't remove the recipe", e instanceof Error ? e.message : undefined);
+    }
   }
 
   return (
@@ -108,15 +106,25 @@ export default function RecipePage() {
             ))}
           </View>
         )}
-        {recipe.source_url && (
-          <Pressable
-            accessibilityRole="link"
-            onPress={() => WebBrowser.openBrowserAsync(recipe.source_url!)}
-            style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, marginTop: 18 })}
-          >
-            <Text style={[styles.sourceLink, { color: colors.berryDark }]}>Watch {sourceName(recipe)} ↗</Text>
-          </Pressable>
-        )}
+        {recipe.source_url &&
+          (Platform.OS === "web" ? (
+            // A real link on the web, where pop-up windows are often blocked.
+            <Text
+              role="link"
+              {...({ href: recipe.source_url, hrefAttrs: { target: "_blank", rel: "noopener" } } as object)}
+              style={[styles.sourceLink, { color: colors.berryDark, marginTop: 18 }]}
+            >
+              Watch {sourceName(recipe)} ↗
+            </Text>
+          ) : (
+            <Pressable
+              accessibilityRole="link"
+              onPress={() => WebBrowser.openBrowserAsync(recipe.source_url!)}
+              style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, marginTop: 18 })}
+            >
+              <Text style={[styles.sourceLink, { color: colors.berryDark }]}>Watch {sourceName(recipe)} ↗</Text>
+            </Pressable>
+          ))}
       </View>
 
       <View style={styles.section}>
