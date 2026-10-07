@@ -25,15 +25,19 @@ export function useAuth() {
   return useContext(AuthContext);
 }
 
-/** Emails a 6-digit sign-in code; creates the account on first use. */
-export async function sendCode(email: string) {
-  const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
+export async function signIn(email: string, password: string) {
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) throw error;
 }
 
-export async function verifyCode(email: string, token: string) {
-  const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
+/**
+ * Creates an account. Returns false when Supabase still needs the email
+ * confirmed ("Confirm email" is on in the project's auth settings).
+ */
+export async function signUp(email: string, password: string): Promise<boolean> {
+  const { data, error } = await supabase.auth.signUp({ email, password });
   if (error) throw error;
+  return !!data.session;
 }
 
 export async function signOut() {

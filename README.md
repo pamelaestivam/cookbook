@@ -47,9 +47,10 @@ computer: it only processes videos while your computer is on.
 
 ### 1. One-time setup in Supabase
 
-[Authentication → Email Templates](https://supabase.com/dashboard/project/elckmwdxjcrohxydgsiz/auth/templates):
-in **Magic Link**, put `{{ .Token }}` in the message so sign-in emails contain the 6-digit code the app asks for.
-For example: `<p>Your Cookbook sign-in code: <strong>{{ .Token }}</strong></p>`.
+People sign in with an email and password. So that new accounts work right away without a confirmation email,
+turn off **Confirm email** in
+[Authentication → Sign In / Providers → Email](https://supabase.com/dashboard/project/elckmwdxjcrohxydgsiz/auth/providers).
+If you leave it on, new users get a confirmation link by email and sign in after opening it.
 
 ### 2. Start the worker
 
@@ -92,7 +93,7 @@ npm install
 npx expo start           # scan the QR code with your phone's camera (iPhone) or Expo Go (Android)
 ```
 
-Sign in with your email, tap **Add a recipe**, and paste a video link. Your phone and computer need to be on the
+Create an account with your email and a password, tap **Add a recipe**, and paste a video link. Your phone and computer need to be on the
 same Wi-Fi network for Expo Go. To publish to the app stores later, build with `npx eas-cli@latest build`.
 
 ## Development

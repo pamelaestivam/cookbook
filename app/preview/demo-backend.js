@@ -167,7 +167,7 @@
 
     // Auth
     if (path === "/auth/v1/otp") return json({});
-    if (path === "/auth/v1/verify" || path === "/auth/v1/token") return json(session());
+    if (path === "/auth/v1/verify" || path === "/auth/v1/token" || path === "/auth/v1/signup") return json(session());
     if (path === "/auth/v1/user") return json(user);
     if (path === "/auth/v1/logout") return empty();
 
