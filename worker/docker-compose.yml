@@ -1,0 +1,6 @@
+# Runs the worker on your own computer: `docker compose up -d`.
+services:
+  worker:
+    build: .
+    env_file: .env
+    restart: unless-stopped

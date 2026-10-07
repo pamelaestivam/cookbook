@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "Turns cooking videos and screenshots into cookbook recipes.",
   "scripts": {
-    "start": "tsx src/index.ts",
-    "dev": "tsx watch --env-file=.env src/index.ts",
+    "start": "tsx --env-file-if-exists=.env src/index.ts",
+    "dev": "tsx watch --env-file-if-exists=.env src/index.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },

@@ -39,45 +39,61 @@ quantities shown on screen). It returns the recipe through structured outputs, s
 schema. It translates recipes into the cookbook's language and keeps the original dish name. Where the video leaves
 something out, it fills the gap and says so in a note. A video that teaches several dishes becomes several chapters.
 
-## Setup
+## Run it on your computer
 
-You need a [Supabase](https://supabase.com) project, a [Claude API key](https://platform.claude.com), and
-somewhere to run a Docker container.
+The database is already set up: Supabase project **Cookbook** (`elckmwdxjcrohxydgsiz`, US East), with the schema in
+`supabase/migrations/` applied. The app's public connection settings are in `app/.env`. The worker runs on your
+computer: it only processes videos while your computer is on.
 
-### 1. Database
+### 1. One-time setup in Supabase
 
-```sh
-npx supabase init        # creates supabase/config.toml; keep the existing migrations
-npx supabase link --project-ref <your-project-ref>
-npx supabase db push
-```
+[Authentication → Email Templates](https://supabase.com/dashboard/project/elckmwdxjcrohxydgsiz/auth/templates):
+in **Magic Link**, put `{{ .Token }}` in the message so sign-in emails contain the 6-digit code the app asks for.
+For example: `<p>Your Cookbook sign-in code: <strong>{{ .Token }}</strong></p>`.
 
-In the Supabase dashboard, open **Authentication → Email Templates → Magic Link** and include `{{ .Token }}` in the
-template, so sign-in emails contain the 6-digit code the app asks for.
+### 2. Start the worker
 
-### 2. Worker
+Get two keys:
+
+- **Supabase secret key**: [Project Settings → API Keys](https://supabase.com/dashboard/project/elckmwdxjcrohxydgsiz/settings/api-keys)
+- **Claude API key**: [platform.claude.com](https://platform.claude.com) → API Keys (the account needs credits)
 
 ```sh
 cd worker
-cp .env.example .env   # fill in SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ANTHROPIC_API_KEY
-docker build -t cookbook-worker .
-docker run --env-file .env cookbook-worker
+cp .env.example .env     # paste the two keys into .env
 ```
 
-For local development without Docker, install `ffmpeg`, then `pip install yt-dlp faster-whisper`, then run
-`npm install && npm run dev`. Keep yt-dlp up to date (`pip install -U yt-dlp`), because sites change often. Some
-Instagram and TikTok posts need a login: export cookies from a browser and set `YTDLP_COOKIES_FILE`.
+Then either, with [Docker Desktop](https://www.docker.com/products/docker-desktop/) (simplest):
 
-### 3. App
+```sh
+docker compose up -d     # first build takes a few minutes; it restarts by itself after a reboot
+docker compose logs -f   # watch it work
+```
+
+or without Docker (needs Node 22+, Python 3 and ffmpeg; on a Mac: `brew install node python ffmpeg`):
+
+```sh
+pip3 install -U yt-dlp faster-whisper
+npm install
+npm start
+```
+
+Without Docker you can also set `YTDLP_COOKIES_FROM_BROWSER=chrome` (or `safari`, `firefox`) in `.env`, so posts
+that need a login on Instagram or TikTok download with your browser's logins. Keep yt-dlp current
+(`pip3 install -U yt-dlp`, or `docker compose build --pull`), because video sites change often.
+
+### 3. Open the app on your phone
+
+Install **Expo Go** from the App Store or Google Play, then on your computer:
 
 ```sh
 cd app
-cp .env.example .env   # fill in EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY
 npm install
-npx expo start
+npx expo start           # scan the QR code with your phone's camera (iPhone) or Expo Go (Android)
 ```
 
-Open it in Expo Go, or build it with `npx eas-cli@latest build`.
+Sign in with your email, tap **Add a recipe**, and paste a video link. Your phone and computer need to be on the
+same Wi-Fi network for Expo Go. To publish to the app stores later, build with `npx eas-cli@latest build`.
 
 ## Development
 

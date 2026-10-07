@@ -34,6 +34,7 @@ export class UserFacingError extends Error {}
 function ytDlpBaseArgs(): string[] {
   const args = ["--no-playlist", "--no-warnings", "--socket-timeout", "30"];
   if (config.ytDlpCookiesFile) args.push("--cookies", config.ytDlpCookiesFile);
+  if (config.ytDlpCookiesFromBrowser) args.push("--cookies-from-browser", config.ytDlpCookiesFromBrowser);
   return args;
 }
 
