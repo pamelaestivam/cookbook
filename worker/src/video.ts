@@ -31,6 +31,11 @@ export interface DownloadedVideo {
 
 export class UserFacingError extends Error {}
 
+/** Runs yt-dlp through Python, which works even when its script isn't on the PATH (common on Windows). */
+function ytDlp(args: string[], options: { cwd?: string; timeoutMs?: number }) {
+  return run(config.python, ["-m", "yt_dlp", ...args], options);
+}
+
 function ytDlpBaseArgs(): string[] {
   const args = ["--no-playlist", "--no-warnings", "--socket-timeout", "30"];
   if (config.ytDlpCookiesFile) args.push("--cookies", config.ytDlpCookiesFile);
@@ -42,7 +47,7 @@ function ytDlpBaseArgs(): string[] {
 export async function downloadVideo(url: string, workDir: string): Promise<DownloadedVideo> {
   let info: Record<string, any>;
   try {
-    info = JSON.parse(await run("yt-dlp", [...ytDlpBaseArgs(), "--dump-single-json", url], { timeoutMs: 120_000 }));
+    info = JSON.parse(await ytDlp([...ytDlpBaseArgs(), "--dump-single-json", url], { timeoutMs: 120_000 }));
   } catch (error) {
     throw new UserFacingError(
       "We couldn't open this link. Check that the video is public, or add the recipe from screenshots instead.",
@@ -76,7 +81,7 @@ export async function downloadVideo(url: string, workDir: string): Promise<Downl
     args.push(track.automatic ? "--write-auto-subs" : "--write-subs", "--sub-langs", track.lang, "--sub-format", "vtt");
   }
   args.push(info.webpage_url ?? url);
-  await run("yt-dlp", args, { cwd: workDir, timeoutMs: 15 * 60_000 });
+  await ytDlp(args, { cwd: workDir, timeoutMs: 15 * 60_000 });
 
   const files = await readdir(workDir);
   const video = files.find((file) => file.startsWith("video.") && /\.(mp4|webm|mkv|mov)$/.test(file));
@@ -123,7 +128,7 @@ async function transcribeSpeech(videoPath: string, workDir: string): Promise<str
   } catch {
     return null; // No audio track.
   }
-  const output = await run("python3", [path.join(here, "..", "transcribe.py"), audioPath, config.whisperModel], {
+  const output = await run(config.python, [path.join(here, "..", "transcribe.py"), audioPath, config.whisperModel], {
     timeoutMs: 30 * 60_000,
   });
   const segments = JSON.parse(output) as Segment[];

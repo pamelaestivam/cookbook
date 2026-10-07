@@ -13,6 +13,7 @@ export const config = {
   },
   model: process.env.CLAUDE_MODEL ?? "claude-opus-5-5",
   whisperModel: process.env.WHISPER_MODEL ?? "small",
+  python: process.env.PYTHON ?? (process.platform === "win32" ? "py" : "python3"),
   ytDlpCookiesFile: process.env.YTDLP_COOKIES_FILE || null,
   ytDlpCookiesFromBrowser: process.env.YTDLP_COOKIES_FROM_BROWSER || null,
   maxVideoSeconds: Number(process.env.MAX_VIDEO_MINUTES ?? 45) * 60,

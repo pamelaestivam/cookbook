@@ -71,7 +71,21 @@ docker compose up -d     # first build takes a few minutes; it restarts by itsel
 docker compose logs -f   # watch it work
 ```
 
-or without Docker (needs Node 22+, Python 3 and ffmpeg; on a Mac: `brew install node python ffmpeg`):
+On **Windows** without Docker, open PowerShell and run:
+
+```powershell
+winget install Git.Git OpenJS.NodeJS.LTS Python.Python.3.12 Gyan.FFmpeg
+# close and reopen PowerShell so the new programs are found, then:
+git clone -b claude/nice-gates-rlm4m7 https://github.com/pamelaestivam/cookbook.git
+cd cookbook\worker
+py -m pip install -U yt-dlp faster-whisper
+copy .env.example .env
+notepad .env             # paste the two keys, save, close
+npm install
+npm start                # leave this window open; it processes videos while it runs
+```
+
+On a **Mac** without Docker (needs Node 22+, Python 3 and ffmpeg: `brew install node python ffmpeg`):
 
 ```sh
 pip3 install -U yt-dlp faster-whisper
