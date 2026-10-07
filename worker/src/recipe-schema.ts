@@ -64,7 +64,11 @@ export const Recipe = z.object({
     .number()
     .int()
     .nullable()
-    .describe("Index of the provided image that best shows the finished dish, or null if none does."),
+    .describe("For screenshots: index of the image that best shows the finished dish, or null if none does."),
+  cover_time_seconds: z
+    .number()
+    .nullable()
+    .describe("For videos: the moment, in seconds from the start, that best shows the finished dish. Null otherwise."),
 });
 
 export const Extraction = z.object({
@@ -75,6 +79,12 @@ export const Extraction = z.object({
     .describe("When is_recipe is false, a one-sentence explanation for the user. Null otherwise."),
   recipes: z.array(Recipe).describe("Usually one. More only when the source clearly teaches several separate dishes."),
 });
+
+/** JSON Schema for Gemini's structured output. */
+export function extractionJsonSchema(): Record<string, unknown> {
+  const { $schema: _ignored, ...schema } = z.toJSONSchema(Extraction) as Record<string, unknown>;
+  return schema;
+}
 
 export type Recipe = z.infer<typeof Recipe>;
 export type Extraction = z.infer<typeof Extraction>;

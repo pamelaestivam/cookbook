@@ -34,13 +34,11 @@ async function workerLoop(id: number) {
   }
 }
 
-if (!process.env.ANTHROPIC_API_KEY) {
-  throw new Error("Missing environment variable ANTHROPIC_API_KEY. See worker/.env.example.");
-}
-// Fail at startup, not on the first import, if Supabase settings are missing.
+// Fail at startup, not on the first import, if settings are missing.
+void config.geminiApiKey;
 void config.supabaseUrl;
 void config.supabaseServiceRoleKey;
 
-console.log(`Cookbook worker started with ${config.concurrency} slot(s), model ${config.model}`);
+console.log(`Cookbook worker started with ${config.concurrency} slot(s), model ${config.geminiModel}`);
 await Promise.all(Array.from({ length: config.concurrency }, (_, i) => workerLoop(i + 1)));
 console.log("Worker stopped.");

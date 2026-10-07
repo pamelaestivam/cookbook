@@ -5,8 +5,7 @@ import path from "node:path";
 import { extractRecipes, type ExtractionInput, type SourceImage } from "./extract.js";
 import type { Recipe } from "./recipe-schema.js";
 import { supabase, type ImportRow } from "./supabase.js";
-import { formatTimestamp } from "./transcript.js";
-import { downloadVideo, extractFrames, probeDuration, UserFacingError } from "./video.js";
+import { downloadVideo, extractFrame, UserFacingError } from "./video.js";
 
 const MAX_ATTEMPTS = 3;
 
@@ -38,6 +37,7 @@ async function loadScreenshots(job: ImportRow): Promise<SourceImage[]> {
 
 interface Gathered {
   input: ExtractionInput;
+  videoPath: string | null;
   fallbackCover: SourceImage | null;
   source: { url: string | null; platform: string | null; author: string | null };
 }
@@ -45,25 +45,32 @@ interface Gathered {
 async function gatherVideo(job: ImportRow, language: string, workDir: string): Promise<Gathered> {
   await setProgress(job, "Downloading the video");
   const video = await downloadVideo(job.source_url!, workDir);
-  const duration = video.metadata.duration ?? (await probeDuration(video.videoPath));
-
-  await setProgress(job, "Watching the video");
-  const frames = await extractFrames(video.videoPath, duration, workDir);
-  const images = await Promise.all(
-    frames.map(async (frame) => ({
-      data: await readFile(frame.path),
-      mediaType: "image/jpeg" as const,
-      label: `frame at ${formatTimestamp(frame.seconds)}`,
-    })),
-  );
-
   return {
-    input: { kind: "video", language, metadata: video.metadata, transcript: video.transcript, images },
+    input: { kind: "video", language, metadata: video.metadata, videoPath: video.videoPath },
+    videoPath: video.videoPath,
     fallbackCover: video.thumbnailPath
       ? { data: await readFile(video.thumbnailPath), mediaType: "image/jpeg", label: "thumbnail" }
       : null,
     source: { url: video.metadata.webpageUrl, platform: video.metadata.platform, author: video.metadata.uploader },
   };
+}
+
+/** Picks the cover: the moment or screenshot Gemini chose, else the video thumbnail. */
+async function chooseCover(recipe: Recipe, gathered: Gathered, workDir: string): Promise<SourceImage | null> {
+  const { input } = gathered;
+  if (input.kind === "images" && recipe.cover_image_index !== null) {
+    return input.images[recipe.cover_image_index] ?? null;
+  }
+  if (gathered.videoPath && recipe.cover_time_seconds !== null) {
+    try {
+      const framePath = path.join(workDir, `cover-${randomUUID()}.jpg`);
+      await extractFrame(gathered.videoPath, recipe.cover_time_seconds, framePath);
+      return { data: await readFile(framePath), mediaType: "image/jpeg", label: "cover" };
+    } catch {
+      // Fall back to the thumbnail.
+    }
+  }
+  return gathered.fallbackCover;
 }
 
 async function uploadCover(ownerId: string, recipeId: string, image: SourceImage): Promise<string> {
@@ -76,7 +83,7 @@ async function uploadCover(ownerId: string, recipeId: string, image: SourceImage
   return coverPath;
 }
 
-async function saveRecipes(job: ImportRow, recipes: Recipe[], gathered: Gathered) {
+async function saveRecipes(job: ImportRow, recipes: Recipe[], gathered: Gathered, workDir: string) {
   const { data: last, error: positionError } = await supabase
     .from("recipes")
     .select("position")
@@ -88,10 +95,10 @@ async function saveRecipes(job: ImportRow, recipes: Recipe[], gathered: Gathered
   let position = (last?.position ?? 0) + 1;
 
   const rows = [];
-  for (const { cover_image_index, ...content } of recipes) {
+  for (const recipe of recipes) {
+    const { cover_image_index: _index, cover_time_seconds: _time, ...content } = recipe;
     const id = randomUUID();
-    const cover =
-      (cover_image_index !== null ? gathered.input.images[cover_image_index] : undefined) ?? gathered.fallbackCover;
+    const cover = await chooseCover(recipe, gathered, workDir);
     rows.push({
       id,
       owner_id: job.owner_id,
@@ -126,18 +133,19 @@ export async function processImport(job: ImportRow): Promise<void> {
         ? await gatherVideo(job, cookbook.language, workDir)
         : {
             input: { kind: "images", language: cookbook.language, images: await loadScreenshots(job) },
+            videoPath: null,
             fallbackCover: null,
             source: { url: null, platform: null, author: null },
           };
 
-    await setProgress(job, "Writing the recipe");
+    await setProgress(job, job.kind === "video" ? "Watching the video" : "Reading your screenshots");
     const extraction = await extractRecipes(gathered.input);
     if (!extraction.is_recipe || extraction.recipes.length === 0) {
       throw new UserFacingError(extraction.reason ?? "We couldn't find a recipe here.");
     }
 
     await setProgress(job, "Adding it to your cookbook");
-    await saveRecipes(job, extraction.recipes, gathered);
+    await saveRecipes(job, extraction.recipes, gathered, workDir);
     await supabase.from("imports").update({ status: "done", progress: null, locked_at: null }).eq("id", job.id);
     console.log(`[${job.id}] added ${extraction.recipes.length} recipe(s)`);
   } catch (error) {

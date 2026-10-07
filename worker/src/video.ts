@@ -1,11 +1,7 @@
-import { readdir, readFile } from "node:fs/promises";
+import { readdir } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { config } from "./config.js";
 import { run } from "./exec.js";
-import { chooseSubtitleTrack, parseVtt, renderTranscript, type Segment } from "./transcript.js";
-
-const here = path.dirname(fileURLToPath(import.meta.url));
 
 export interface VideoMetadata {
   title: string | null;
@@ -16,16 +12,9 @@ export interface VideoMetadata {
   webpageUrl: string;
 }
 
-export interface Frame {
-  path: string;
-  seconds: number;
-}
-
 export interface DownloadedVideo {
   metadata: VideoMetadata;
   videoPath: string;
-  transcript: string | null;
-  transcriptSource: "captions" | "speech" | null;
   thumbnailPath: string | null;
 }
 
@@ -43,7 +32,7 @@ function ytDlpBaseArgs(): string[] {
   return args;
 }
 
-/** Downloads a video from any site yt-dlp supports, plus captions and a thumbnail. */
+/** Downloads a video from any site yt-dlp supports, plus its thumbnail. */
 export async function downloadVideo(url: string, workDir: string): Promise<DownloadedVideo> {
   let info: Record<string, any>;
   try {
@@ -62,47 +51,30 @@ export async function downloadVideo(url: string, workDir: string): Promise<Downl
     );
   }
 
-  const track = chooseSubtitleTrack(info.subtitles, info.automatic_captions, info.language);
-  const args = [
-    ...ytDlpBaseArgs(),
-    "-f",
-    "bv*[height<=720]+ba/b[height<=720]/bv*+ba/b",
-    "--merge-output-format",
-    "mp4",
-    "--max-filesize",
-    "800M",
-    "-o",
-    "video.%(ext)s",
-    "--write-thumbnail",
-    "--convert-thumbnails",
-    "jpg",
-  ];
-  if (track) {
-    args.push(track.automatic ? "--write-auto-subs" : "--write-subs", "--sub-langs", track.lang, "--sub-format", "vtt");
-  }
-  args.push(info.webpage_url ?? url);
-  await ytDlp(args, { cwd: workDir, timeoutMs: 15 * 60_000 });
+  // 480p keeps uploads small; on-screen text is still readable at that size.
+  await ytDlp(
+    [
+      ...ytDlpBaseArgs(),
+      "-f",
+      "bv*[height<=480]+ba/b[height<=480]/bv*+ba/b",
+      "--merge-output-format",
+      "mp4",
+      "--max-filesize",
+      "500M",
+      "-o",
+      "video.%(ext)s",
+      "--write-thumbnail",
+      "--convert-thumbnails",
+      "jpg",
+      info.webpage_url ?? url,
+    ],
+    { cwd: workDir, timeoutMs: 15 * 60_000 },
+  );
 
   const files = await readdir(workDir);
   const video = files.find((file) => file.startsWith("video.") && /\.(mp4|webm|mkv|mov)$/.test(file));
   if (!video) throw new UserFacingError("The video could not be downloaded.");
-  const subtitle = files.find((file) => file.endsWith(".vtt"));
   const thumbnail = files.find((file) => file.endsWith(".jpg"));
-  const videoPath = path.join(workDir, video);
-
-  let transcript: string | null = null;
-  let transcriptSource: DownloadedVideo["transcriptSource"] = null;
-  if (subtitle) {
-    const segments = parseVtt(await readFile(path.join(workDir, subtitle), "utf8"));
-    if (segments.length > 0) {
-      transcript = renderTranscript(segments);
-      transcriptSource = "captions";
-    }
-  }
-  if (!transcript) {
-    transcript = await transcribeSpeech(videoPath, workDir);
-    if (transcript) transcriptSource = "speech";
-  }
 
   return {
     metadata: {
@@ -113,74 +85,28 @@ export async function downloadVideo(url: string, workDir: string): Promise<Downl
       duration,
       webpageUrl: info.webpage_url ?? url,
     },
-    videoPath,
-    transcript,
-    transcriptSource,
+    videoPath: path.join(workDir, video),
     thumbnailPath: thumbnail ? path.join(workDir, thumbnail) : null,
   };
 }
 
-/** Speech-to-text with faster-whisper for videos without captions. */
-async function transcribeSpeech(videoPath: string, workDir: string): Promise<string | null> {
-  const audioPath = path.join(workDir, "audio.wav");
-  try {
-    await run("ffmpeg", ["-y", "-loglevel", "error", "-i", videoPath, "-vn", "-ac", "1", "-ar", "16000", audioPath]);
-  } catch {
-    return null; // No audio track.
-  }
-  const output = await run(config.python, [path.join(here, "..", "transcribe.py"), audioPath, config.whisperModel], {
-    timeoutMs: 30 * 60_000,
-  });
-  const segments = JSON.parse(output) as Segment[];
-  return segments.length > 0 ? renderTranscript(segments) : null;
-}
-
-/** How many frames to show Claude: about one every 8 seconds, between 8 and 30. */
-export function frameCount(durationSeconds: number): number {
-  return Math.min(30, Math.max(8, Math.round(durationSeconds / 8)));
-}
-
-/** Samples evenly spaced frames, with the longest side scaled to 768 px. */
-export async function extractFrames(videoPath: string, durationSeconds: number, workDir: string): Promise<Frame[]> {
-  const count = frameCount(durationSeconds);
-  const interval = durationSeconds / count;
-  const frames: Frame[] = [];
-  for (let i = 0; i < count; i++) {
-    const seconds = interval * (i + 0.5);
-    const framePath = path.join(workDir, `frame-${String(i).padStart(2, "0")}.jpg`);
-    await run("ffmpeg", [
-      "-y",
-      "-loglevel",
-      "error",
-      "-ss",
-      seconds.toFixed(2),
-      "-i",
-      videoPath,
-      "-frames:v",
-      "1",
-      "-vf",
-      "scale='if(gt(iw,ih),min(768,iw),-2)':'if(gt(iw,ih),-2,min(768,ih))'",
-      "-q:v",
-      "4",
-      framePath,
-    ]);
-    frames.push({ path: framePath, seconds });
-  }
-  return frames;
-}
-
-/** Reads the real duration from the file when the site didn't report one. */
-export async function probeDuration(videoPath: string): Promise<number> {
-  const output = await run("ffprobe", [
-    "-v",
+/** Saves the frame at `seconds` as a JPEG, with the longest side at most 1080 px. */
+export async function extractFrame(videoPath: string, seconds: number, outputPath: string): Promise<string> {
+  await run("ffmpeg", [
+    "-y",
+    "-loglevel",
     "error",
-    "-show_entries",
-    "format=duration",
-    "-of",
-    "default=noprint_wrappers=1:nokey=1",
+    "-ss",
+    Math.max(0, seconds).toFixed(2),
+    "-i",
     videoPath,
+    "-frames:v",
+    "1",
+    "-vf",
+    "scale='if(gt(iw,ih),min(1080,iw),-2)':'if(gt(iw,ih),-2,min(1080,ih))'",
+    "-q:v",
+    "3",
+    outputPath,
   ]);
-  const duration = Number.parseFloat(output);
-  if (!Number.isFinite(duration) || duration <= 0) throw new UserFacingError("The downloaded video is empty.");
-  return duration;
+  return outputPath;
 }
